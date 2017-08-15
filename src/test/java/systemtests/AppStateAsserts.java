@@ -12,6 +12,8 @@ import static seedu.address.ui.testutil.GuiTestAssert.assertListMatching;
 import java.time.Clock;
 import java.util.Date;
 
+import guitests.GuiRobot;
+import guitests.guihandles.BrowserPanelHandle;
 import guitests.guihandles.StatusBarFooterHandle;
 import seedu.address.MainApp;
 import seedu.address.model.AddressBook;
@@ -31,12 +33,15 @@ public class AppStateAsserts {
      */
     public static void assertCommandSuccess(AddressBookSystemTest addressBookSystemTest, String commandToRun,
             Model expectedModel, String expectedResultMessage, boolean browserUrlWillChange,
-            boolean personListSelectionWillChange) throws Exception {
+            boolean personListSelectionWillChange) {
 
         rememberStates(addressBookSystemTest);
         addressBookSystemTest.runCommand(commandToRun);
         assertComponentsMatchExpected(addressBookSystemTest, true, expectedModel,
                 "", expectedResultMessage, browserUrlWillChange, personListSelectionWillChange);
+        if (browserUrlWillChange) {
+            waitUntilBrowserLoaded(addressBookSystemTest.getBrowserPanel());
+        }
     }
 
     /**
@@ -44,7 +49,7 @@ public class AppStateAsserts {
      * the {@code ResultDisplay} displaying {@code expectedResultMessage}. The model and storage remains unchanged.
      */
     public static void assertCommandFailure(AddressBookSystemTest addressBookSystemTest, String commandToRun,
-            String expectedResultMessage) throws Exception {
+            String expectedResultMessage) {
         Model expectedModel = new ModelManager(
                 new AddressBook(addressBookSystemTest.getTestApp().getModel().getAddressBook()), new UserPrefs());
 
@@ -58,8 +63,7 @@ public class AppStateAsserts {
      * Calls {@code BrowserPanelHandle}, {@code PersonListPanelHandle} and {@code StatusBarFooterHandle} to remember
      * their current state.
      */
-    private static void rememberStates(AddressBookSystemTest addressBookSystemTest)
-            throws Exception {
+    private static void rememberStates(AddressBookSystemTest addressBookSystemTest) {
 
         addressBookSystemTest.getBrowserPanel().rememberUrl();
         addressBookSystemTest.getStatusBarFooter().rememberSaveLocation();
@@ -73,7 +77,7 @@ public class AppStateAsserts {
     private static void assertComponentsMatchExpected(AddressBookSystemTest addressBookSystemTest,
             boolean addressBookWillUpdate, Model expectedModel, String expectedCommandBoxText,
             String expectedResultMessage, boolean browserUrlWillChange,
-            boolean personListSelectionWillChange) throws Exception {
+            boolean personListSelectionWillChange) {
 
         assertEquals(expectedCommandBoxText, addressBookSystemTest.getCommandBox().getInput());
         assertEquals(browserUrlWillChange, addressBookSystemTest.getBrowserPanel().isUrlChanged());
@@ -91,6 +95,14 @@ public class AppStateAsserts {
         } else {
             assertStatusBarUnchanged(addressBookSystemTest.getStatusBarFooter());
         }
+    }
+
+    /**
+     * Sleeps the thread till the {@code browserPanelHandle}'s {@code WebView} is successfully loaded.
+     */
+    private static void waitUntilBrowserLoaded(BrowserPanelHandle browserPanelHandle) {
+        new GuiRobot().waitForEvent(browserPanelHandle::getIsWebViewLoaded);
+        browserPanelHandle.setIsWebViewLoaded(false);
     }
 
     /**

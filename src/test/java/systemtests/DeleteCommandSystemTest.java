@@ -12,7 +12,6 @@ import static systemtests.AppStateAsserts.assertCommandSuccess;
 
 import org.junit.Test;
 
-import guitests.GuiRobot;
 import seedu.address.commons.core.Messages;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.DeleteCommand;
@@ -23,6 +22,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.ReadOnlyPerson;
+import seedu.address.model.person.exceptions.PersonNotFoundException;
 
 public class DeleteCommandSystemTest extends AddressBookSystemTest {
 
@@ -30,7 +30,7 @@ public class DeleteCommandSystemTest extends AddressBookSystemTest {
             String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, DeleteCommand.MESSAGE_USAGE);
 
     @Test
-    public void delete() throws Exception {
+    public void delete() {
         Model expectedModel = new ModelManager(new AddressBook(getTestApp().getModel().getAddressBook()),
                 new UserPrefs());
 
@@ -65,10 +65,6 @@ public class DeleteCommandSystemTest extends AddressBookSystemTest {
         command = DeleteCommand.COMMAND_WORD + " " + String.valueOf(selectedIndex.getOneBased());
         assertDeleteCommandSuccess(command, expectedModel, selectedIndex, true, true);
 
-        // as a new person is selected in the previous test case, causing the browser to reload,
-        // it needs time to load the new page
-        new GuiRobot().sleep(5000);
-
         /* Case: invalid index (0) -> rejected */
         command = DeleteCommand.COMMAND_WORD + " 0";
         assertCommandFailure(this, command, MESSAGE_INVALID_DELETE_COMMAND_FORMAT);
@@ -99,13 +95,16 @@ public class DeleteCommandSystemTest extends AddressBookSystemTest {
      * and the model and storage are modified accordingly.
      */
     private void assertDeleteCommandSuccess(String command, Model expectedModel, Index index,
-            boolean browserUrlWillChange, boolean personListSelectionWillChange) throws Exception {
+            boolean browserUrlWillChange, boolean personListSelectionWillChange) {
         ReadOnlyPerson targetPerson = getPerson(expectedModel, index);
         String expectedResultMessage = String.format(MESSAGE_DELETE_PERSON_SUCCESS, targetPerson);
-        expectedModel.deletePerson(targetPerson);
 
-        assertCommandSuccess(this, command, expectedModel, expectedResultMessage, browserUrlWillChange,
-                personListSelectionWillChange);
-
+        try {
+            expectedModel.deletePerson(targetPerson);
+            assertCommandSuccess(this, command, expectedModel, expectedResultMessage, browserUrlWillChange,
+                    personListSelectionWillChange);
+        } catch (PersonNotFoundException pnfe) {
+            throw new IllegalArgumentException("targetPerson should be in the list", pnfe);
+        }
     }
 }

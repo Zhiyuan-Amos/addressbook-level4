@@ -1,8 +1,5 @@
 package guitests.guihandles;
 
-import static seedu.address.testutil.EventsUtil.postNow;
-
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import guitests.GuiRobot;
@@ -18,17 +15,18 @@ public class BrowserPanelHandle extends NodeHandle<Node> {
 
     public static final String BROWSER_ID = "#browser";
 
+    private boolean isWebViewLoaded = false;
+
     private URL lastRememberedUrl;
 
     public BrowserPanelHandle(Node browserPanelNode) {
         super(browserPanelNode);
 
-        // Posts WebViewLoadedEvent whenever a new page is loaded
         WebView webView = getChildNode(BROWSER_ID);
         WebEngine engine = webView.getEngine();
         new GuiRobot().interact(() -> engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == Worker.State.SUCCEEDED) {
-                postNow(new WebViewLoadedEvent());
+                isWebViewLoaded = true;
             }
         }));
     }
@@ -36,14 +34,14 @@ public class BrowserPanelHandle extends NodeHandle<Node> {
     /**
      * Returns the {@code URL} of the currently loaded page.
      */
-    public URL getLoadedUrl() throws MalformedURLException {
+    public URL getLoadedUrl() {
         return WebViewUtil.getLoadedUrl(getChildNode(BROWSER_ID));
     }
 
     /**
      * Remembers the {@code URL} of the currently loaded page.
      */
-    public void rememberUrl() throws MalformedURLException {
+    public void rememberUrl() {
         lastRememberedUrl = getLoadedUrl();
     }
 
@@ -51,7 +49,15 @@ public class BrowserPanelHandle extends NodeHandle<Node> {
      * Returns true if the current {@code URL} is different from the value remembered by the most recent
      * {@code rememberUrl()} call.
      */
-    public boolean isUrlChanged() throws MalformedURLException {
+    public boolean isUrlChanged() {
         return !lastRememberedUrl.equals(getLoadedUrl());
+    }
+
+    public boolean getIsWebViewLoaded() {
+        return isWebViewLoaded;
+    }
+
+    public void setIsWebViewLoaded(boolean isWebViewLoaded) {
+        this.isWebViewLoaded = isWebViewLoaded;
     }
 }
